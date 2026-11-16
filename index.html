@@ -192,7 +192,29 @@
         <label>Notes</label><textarea data-k="notes" placeholder="Where you bought it, anything to remember"></textarea>
       </div>
 
-      <!-- Draft listing goes here in step 7 -->
+      <!-- Draft Vinted listing (made from the template in Settings) -->
+      <div class="card">
+        <h2>Draft listing</h2>
+        <label>Measurements</label>
+        <input data-k="measurements" autocomplete="off" placeholder="e.g. Pit to pit 56cm, length 70cm">
+        <label>Flaws</label>
+        <input data-k="flaws" autocomplete="off" placeholder="e.g. Small mark on left sleeve (see photos)">
+
+        <label>Title <span class="muted small" id="l-title-count"></span></label>
+        <textarea id="l-title" class="short" rows="2"></textarea>
+        <button class="btn copy" data-copy="l-title">Copy title</button>
+
+        <label>Description</label>
+        <textarea id="l-desc" rows="10"></textarea>
+        <button class="btn copy" data-copy="l-desc">Copy description</button>
+
+        <label>Hashtags</label>
+        <textarea id="l-tags" class="short" rows="2"></textarea>
+        <button class="btn copy" data-copy="l-tags">Copy hashtags</button>
+
+        <button class="btn primary" id="btn-copy-all">Copy all (description + hashtags)</button>
+        <p class="muted small">You can tweak the text here before copying. Changes here aren't saved, so edit the template in Settings to change it for every item.</p>
+      </div>
 
       <button class="btn danger" id="btn-delete">Delete item</button>
     </section>
@@ -218,6 +240,18 @@
       </div>
 
       <div class="card">
+        <h2>Listing template</h2>
+        <p class="muted small">Words in {curly brackets} are filled in from the item: {name} {brand} {model} {size} {colour} {condition} {measurements} {flaws}. Anything inside [square brackets] is left out if one of its {words} is empty.</p>
+        <label for="s-tplTitle">Title</label>
+        <textarea id="s-tplTitle" class="short" rows="2"></textarea>
+        <label for="s-tplDesc">Description</label>
+        <textarea id="s-tplDesc" rows="10"></textarea>
+        <label for="s-tplTags">Extra hashtags (added to every listing)</label>
+        <input id="s-tplTags" autocomplete="off" autocapitalize="off">
+        <button class="btn" id="btn-tpl-reset">Reset template to default</button>
+      </div>
+
+      <div class="card">
         <h2>Barcode lookup relay</h2>
         <p class="muted small">Optional. Paste your Cloudflare Worker address here to look up electronics and branded goods (UPCitemdb). Leave empty to use only Open Food Facts.</p>
         <label for="s-relay">Relay address</label>
@@ -239,5 +273,6 @@
   <script src="db.js"></script>
   <script src="app.js"></script>
   <script src="stock.js"></script>
+  <script src="listing.js"></script>
 </body>
 </html>

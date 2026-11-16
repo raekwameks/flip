@@ -134,3 +134,8 @@ textarea { min-height: 120px; }
 input[type="date"] { min-height: 46px; padding: 8px; font-size: 15px; }
 .toast { position: fixed; left: 16px; right: 16px; bottom: calc(96px + env(safe-area-inset-bottom)); background: var(--green); color: #06210f; font-weight: 700; text-align: center; padding: 14px; border-radius: var(--radius); z-index: 20; }
 @media (max-width: 400px) { .three-dates { grid-template-columns: 1fr; } }
+
+/* Draft listing */
+textarea.short { min-height: 0; }
+.btn.copy { min-height: 46px; line-height: 46px; font-size: 16px; margin-top: 6px; }
+.btn.copied { background: var(--green); color: #06210f; }
