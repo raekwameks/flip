@@ -43,7 +43,7 @@ Tap **＋ Add to stock**. It is saved as *Bought* with today's date.
 
 ### Stock list (📦 Stock tab)
 - Totals at the top: money spent, money made, profit (sold items), items in stock.
-- **Monthly profit chart**: profit from items sold in each of the last 12 months. Green bars = profit, purple bars below the line = a month that lost money. Tap a bar to see that month's profit and number of sales; **Show as a table** lists every month. A sale counts in the month of its *Sold* date.
+- **Monthly profit chart**: profit from items sold in each of the last 12 months. Orange bars = profit, purple bars below the line = a month that lost money. Tap a bar to see that month's profit and number of sales; **Show as a table** lists every month. A sale counts in the month of its *Sold* date.
 - Search box, and **All / Bought / Listed / Sold** filters.
 - Tap an item to open it:
   - Tap **Listed** or **Sold**. Today's date is filled in automatically.
