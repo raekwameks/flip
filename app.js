@@ -1,5 +1,5 @@
 // ===== Main app code =====
-const APP_VERSION = '5'; // keep in step with VERSION in sw.js
+const APP_VERSION = '6'; // keep in step with VERSION in sw.js
 
 // Shortcut for finding things on the page
 const $ = (sel) => document.querySelector(sel);
@@ -20,7 +20,8 @@ $('#app-version').textContent = APP_VERSION;
 // CHECK TAB — the item you're currently looking at ("draft")
 // The draft is saved on the phone as you type, so it survives closing the app.
 // =====================================================================
-const FIELDS = ['name', 'brand', 'model', 'size', 'colour', 'condition', 'barcode'];
+const FIELDS = ['name', 'brand', 'model', 'size', 'colour', 'condition', 'barcode',
+                'query', 'soldLow', 'soldTypical', 'soldHigh', 'vintedAsk'];
 let draft = { photo: null };
 
 function readForm() {
@@ -30,6 +31,7 @@ function fillForm() {
   FIELDS.forEach(f => $('#f-' + f).value = draft[f] || '');
   $('#photo-box').hidden = !draft.photo;
   $('#photo-preview').src = draft.photo || '';
+  updatePriceLinks();
 }
 async function saveDraft() {
   readForm();
@@ -41,7 +43,7 @@ async function loadDraft() {
   fillForm();
 }
 
-FIELDS.forEach(f => $('#f-' + f).addEventListener('input', saveDraft));
+FIELDS.forEach(f => $('#f-' + f).addEventListener('input', () => { saveDraft(); updatePriceLinks(); }));
 $('#f-condition').addEventListener('change', saveDraft);
 
 // When you finish typing the name, guess brand/size/colour/etc. into the empty boxes
@@ -107,6 +109,36 @@ async function aiIdentify(photoDataUrl) {
 
 
 // =====================================================================
+// PRICE CHECK — builds eBay / Vinted search links. Nothing is scraped.
+// =====================================================================
+function autoQuery() {
+  const name = $('#f-name').value.trim();
+  const size = $('#f-size').value.trim();
+  // add the size unless it's already in the name
+  return (size && !name.toLowerCase().includes(size.toLowerCase())) ? `${name} ${size}` : name;
+}
+
+function updatePriceLinks() {
+  const typed = $('#f-query').value.trim();
+  const q = typed || autoQuery();
+  $('#f-query').placeholder = autoQuery() || 'Made from the name + size';
+  const enc = encodeURIComponent(q);
+  $('#btn-ebay').href = `https://www.ebay.co.uk/sch/i.html?_nkw=${enc}&LH_Sold=1&LH_Complete=1`;
+  $('#btn-vinted').href = `https://www.vinted.co.uk/catalog?search_text=${enc}`;
+  $$('#btn-ebay, #btn-vinted').forEach(a => a.classList.toggle('disabled', !q));
+  $('#query-note').textContent = q ? `Searching for: "${q}"` : 'Type a name first.';
+}
+$$('#btn-ebay, #btn-vinted').forEach(a => a.addEventListener('click', e => {
+  if (a.classList.contains('disabled')) e.preventDefault();
+}));
+
+// Turns "£12.50" or "12,5" into 12.5. Empty box → null.
+function money(v) {
+  const n = parseFloat(String(v ?? '').replace(/[£\s]/g, '').replace(',', '.'));
+  return isNaN(n) ? null : n;
+}
+
+// =====================================================================
 // BARCODE SCANNING + LOOKUP
 // =====================================================================
 let scanner = null;
@@ -124,12 +156,12 @@ async function startScan() {
   const F = Html5QrcodeSupportedFormats;
   scanner = new Html5Qrcode('reader', {
     verbose: false,
-    formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128, F.CODE_39],
+    formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128, F.CODE_39, F.QR_CODE],
   });
   try {
     await scanner.start(
       { facingMode: 'environment' },          // back camera
-      { fps: 10, qrbox: { width: 260, height: 140 } },
+      { fps: 10, qrbox: (w) => { const size = Math.min(w * 0.8, 300); return { width: size, height: size * 0.75 }; } },
       onScanned
     );
   } catch (err) {
@@ -147,14 +179,34 @@ async function stopScan() {
   $('#scanner').hidden = true;
 }
 
-async function onScanned(code) {
+async function onScanned(text) {
   await stopScan();
   if (navigator.vibrate) navigator.vibrate(80);
   readForm();
-  draft.barcode = code;
-  fillForm();
-  await saveDraft();
-  await lookupBarcode(code);
+  text = text.trim();
+
+  // QR codes can hold a barcode number, a web link, or plain text
+  const gs1 = text.match(/\/01\/(\d{8,14})/);          // GS1 "digital link" QR — has the barcode inside
+  const code = /^\d{8,14}$/.test(text) ? text : (gs1 ? gs1[1].replace(/^0+(?=\d{12})/, '') : null);
+
+  if (code) {
+    draft.barcode = code;
+    fillForm();
+    await saveDraft();
+    await lookupBarcode(code);
+  } else if (/^https?:\/\//i.test(text)) {
+    draft.link = text;
+    await saveDraft();
+    showStatus('');
+    $('#scan-status').hidden = false;
+    $('#scan-status').innerHTML = 'QR code is a web link. <a target="_blank" rel="noopener">Open it</a> to see what the item is, then type the name.';
+    $('#scan-status a').href = text;
+  } else {
+    if (!draft.name) draft.name = text.slice(0, 120);
+    fillForm();
+    await autoFillFromName();
+    showStatus('QR code text added as the name. Edit it if needed.');
+  }
 }
 
 // Tries each free lookup in turn. Fills in only the boxes that are still empty.

@@ -62,6 +62,13 @@ textarea { min-height: 120px; }
 .three .btn span { font-size: 28px; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
 
+/* Price check */
+.two .btn { margin: 10px 0 0; }
+.btn.ebay { background: #2b5fd9; color: #fff; }
+.btn.vinted { background: #0a8a8a; color: #fff; }
+.three-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.status a { color: var(--blue); }
+
 /* Messages like "Looking up…" */
 .status { background: var(--card); border-left: 4px solid var(--blue); padding: 10px 12px; border-radius: 8px; margin: 12px 0; }
 
@@ -79,3 +86,4 @@ textarea { min-height: 120px; }
 /* Item photo */
 #photo-box { margin-top: 12px; }
 #photo-preview { width: 100%; max-height: 360px; object-fit: contain; border-radius: var(--radius); background: var(--card); display: block; }
+.btn.disabled { opacity: .4; }

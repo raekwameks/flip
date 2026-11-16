@@ -65,6 +65,27 @@
         <input id="f-barcode" inputmode="numeric" autocomplete="off" placeholder="Filled in when you scan">
       </div>
 
+      <!-- 2. Check prices (opens eBay / Vinted in a new tab — nothing is scraped) -->
+      <div class="card">
+        <h2>Check prices</h2>
+        <label for="f-query">Search words</label>
+        <input id="f-query" autocomplete="off" placeholder="Made from the name + size">
+        <div class="two">
+          <a class="btn ebay" id="btn-ebay" target="_blank" rel="noopener">eBay sold</a>
+          <a class="btn vinted" id="btn-vinted" target="_blank" rel="noopener">Vinted live</a>
+        </div>
+        <p class="muted small" id="query-note"></p>
+
+        <label>eBay sold prices (£)</label>
+        <div class="three-inputs">
+          <div><input id="f-soldLow" inputmode="decimal" placeholder="Low"></div>
+          <div><input id="f-soldTypical" inputmode="decimal" placeholder="Typical"></div>
+          <div><input id="f-soldHigh" inputmode="decimal" placeholder="High"></div>
+        </div>
+        <label for="f-vintedAsk">Vinted asking price (£)</label>
+        <input id="f-vintedAsk" inputmode="decimal" placeholder="What similar items are listed for">
+      </div>
+
       <button class="btn" id="btn-clear">Start a new item</button>
     </section>
 
