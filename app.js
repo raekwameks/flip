@@ -1,5 +1,5 @@
 // ===== Main app code =====
-const APP_VERSION = '11'; // keep in step with VERSION in sw.js
+const APP_VERSION = '12'; // keep in step with VERSION in sw.js
 
 // Shortcut for finding things on the page
 const $ = (sel) => document.querySelector(sel);
@@ -24,15 +24,14 @@ $('#app-version').textContent = APP_VERSION;
 const FIELDS = ['name', 'brand', 'model', 'size', 'colour', 'condition',
                 'query', 'soldLow', 'soldTypical', 'soldHigh', 'vintedAsk',
                 'buyPrice', 'sellPrice', 'fees', 'postage', 'otherCosts'];
-let draft = { photo: null };
+let draft = { photo: null, photos: [] };
 
 function readForm() {
   FIELDS.forEach(f => draft[f] = $('#f-' + f).value.trim());
 }
 function fillForm() {
   FIELDS.forEach(f => $('#f-' + f).value = draft[f] || '');
-  $('#photo-box').hidden = !draft.photo;
-  $('#photo-preview').src = draft.photo || '';
+  renderGallery($('#draft-gallery'), draft, draftPhotosChanged);
   updatePriceLinks();
   calcProfit();
 }
@@ -56,30 +55,90 @@ $('#f-name').addEventListener('change', autoFillFromName);
 $('#btn-type').addEventListener('click', () => $('#f-name').focus());
 
 $('#btn-clear').addEventListener('click', async () => {
-  draft = { photo: null };
+  draft = { photo: null, photos: [] };
   fillForm();
   showStatus('');
   await saveDraft();
   window.scrollTo(0, 0);
 });
 
-// ----- Photo -----
+// =====================================================================
+// PHOTOS — up to MAX_PHOTOS per item. The first photo is the cover.
+// Stored as item.photos (list). item.photo is kept as the cover for the stock list.
+// =====================================================================
+const MAX_PHOTOS = 10;
+
+function getPhotos(o) { return o.photos?.length ? o.photos : (o.photo ? [o.photo] : []); }
+function setPhotos(o, list) { o.photos = list.slice(0, MAX_PHOTOS); o.photo = o.photos[0] || null; }
+
+async function addPhotoFiles(files, obj) {
+  const list = getPhotos(obj).slice();
+  for (const f of files) {
+    if (list.length >= MAX_PHOTOS) { toast(`Max ${MAX_PHOTOS} photos per item`); break; }
+    try { list.push(await shrinkPhoto(f)); } catch (e) { /* skip unreadable file */ }
+  }
+  setPhotos(obj, list);
+}
+
+// Draws the row of thumbnails. Tap one to view it big.
+function renderGallery(box, obj, onChange) {
+  const photos = getPhotos(obj);
+  box.innerHTML = '';
+  box.hidden = !photos.length;
+  photos.forEach((src, i) => {
+    const b = document.createElement('button');
+    b.className = 'thumb';
+    const img = document.createElement('img');
+    img.src = src; img.alt = 'Photo ' + (i + 1);
+    b.appendChild(img);
+    if (i === 0 && photos.length > 1) {
+      const tag = document.createElement('span'); tag.textContent = 'Cover'; b.appendChild(tag);
+    }
+    b.addEventListener('click', () => openViewer(obj, i, onChange));
+    box.appendChild(b);
+  });
+}
+
+// ----- Full-screen viewer -----
+let viewer = null; // { obj, i, onChange }
+function openViewer(obj, i, onChange) {
+  viewer = { obj, i, onChange };
+  const photos = getPhotos(obj);
+  $('#viewer-img').src = photos[i];
+  $('#viewer-count').textContent = `Photo ${i + 1} of ${photos.length}` + (i === 0 ? ' (cover)' : '');
+  $('#v-cover').hidden = i === 0;
+  $('#viewer').hidden = false;
+}
+function closeViewer() { $('#viewer').hidden = true; viewer = null; }
+$('#v-close').addEventListener('click', closeViewer);
+$('#v-cover').addEventListener('click', async () => {
+  const list = getPhotos(viewer.obj).slice();
+  list.unshift(list.splice(viewer.i, 1)[0]);
+  setPhotos(viewer.obj, list);
+  const done = viewer.onChange; closeViewer(); await done();
+});
+$('#v-delete').addEventListener('click', async () => {
+  const list = getPhotos(viewer.obj).slice();
+  list.splice(viewer.i, 1);
+  setPhotos(viewer.obj, list);
+  const done = viewer.onChange; closeViewer(); await done();
+});
+
+// ----- Photos on the Check screen -----
+async function draftPhotosChanged() {
+  renderGallery($('#draft-gallery'), draft, draftPhotosChanged);
+  await saveDraft();
+}
 $('#btn-photo').addEventListener('click', () => $('#photo-input').click());
 $('#photo-input').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  draft.photo = await shrinkPhoto(file);
+  const files = [...e.target.files];
   e.target.value = '';
-  fillForm();
-  await saveDraft();
+  if (!files.length) return;
+  await addPhotoFiles(files, draft);
+  await draftPhotosChanged();
 
   // --- AI IDENTIFY: future feature goes here ---
-  // e.g. const guess = await aiIdentify(draft.photo); if (guess) { draft.name = guess.name; fillForm(); }
-});
-$('#btn-photo-remove').addEventListener('click', async () => {
-  draft.photo = null;
-  fillForm();
-  await saveDraft();
+  // e.g. const guess = await aiIdentify(getPhotos(draft)[0]); if (guess) { draft.name = guess.name; fillForm(); }
 });
 
 // Makes photos smaller (max 1200px wide/high) so the phone doesn't fill up

@@ -36,11 +36,8 @@
       </div>
 
       <!-- Hidden file picker that opens the camera -->
-      <input type="file" id="photo-input" accept="image/*" capture="environment" hidden>
-      <div id="photo-box" hidden>
-        <img id="photo-preview" alt="Item photo">
-        <button class="btn" id="btn-photo-remove">Remove photo</button>
-      </div>
+      <input type="file" id="photo-input" accept="image/*" multiple hidden>
+      <div class="gallery" id="draft-gallery" hidden></div>
 
       <!-- Item details -->
       <div class="card">
@@ -135,7 +132,9 @@
     <!-- ===== ITEM DETAIL (opens when you tap an item in Stock) ===== -->
     <section id="tab-item" class="tab">
       <button class="back" id="btn-back">‹ Stock</button>
-      <img id="i-photo" class="item-photo" alt="" hidden>
+      <div class="gallery" id="i-gallery" hidden></div>
+      <button class="btn" id="btn-i-add-photos">＋ Add photos</button>
+      <input type="file" id="i-photo-input" accept="image/*" multiple hidden>
       <h1 id="i-title"></h1>
 
       <div class="seg" id="i-status">
@@ -273,6 +272,17 @@
       <p class="small">Offline ready: <span id="offline-status">checking…</span></p>
     </section>
   </main>
+
+  <!-- Full-screen photo viewer (opens when you tap a thumbnail) -->
+  <div id="viewer" hidden>
+    <img id="viewer-img" alt="">
+    <p class="viewer-count" id="viewer-count"></p>
+    <div class="viewer-btns">
+      <button class="btn" id="v-cover">Make cover</button>
+      <button class="btn danger" id="v-delete">Delete photo</button>
+      <button class="btn" id="v-close">Close</button>
+    </div>
+  </div>
 
   <!-- Bottom tab bar -->
   <nav class="tabbar">

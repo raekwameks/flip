@@ -143,3 +143,19 @@ textarea.short { min-height: 0; }
 
 .backup-nag { display: block; width: 100%; text-align: left; color: var(--text); border: 0; border-left: 4px solid #e6b450; font: inherit; font-size: 15px; }
 .backup-nag[hidden] { display: none; }
+
+/* ===== Photo thumbnails + viewer ===== */
+.gallery { display: flex; gap: 8px; overflow-x: auto; margin-top: 12px; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.gallery[hidden] { display: none; }
+.thumb { position: relative; flex: none; width: 96px; height: 96px; padding: 0; border: 0; border-radius: 10px; overflow: hidden; background: var(--card); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb span { position: absolute; left: 4px; bottom: 4px; background: var(--green); color: #06210f; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 6px; }
+#viewer { position: fixed; inset: 0; z-index: 15; background: rgba(0,0,0,.95); display: flex; flex-direction: column; justify-content: center;
+  padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 16px); }
+#viewer[hidden] { display: none; }
+#viewer img { max-width: 100%; max-height: 62vh; object-fit: contain; align-self: center; border-radius: 10px; }
+.viewer-count { text-align: center; color: #ccc; margin: 10px 0 0; font-size: 15px; }
+.viewer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.viewer-btns .btn { margin: 0; }
+.viewer-btns .btn[hidden] { display: none; }
+#v-close { grid-column: 1 / -1; }

@@ -22,7 +22,7 @@ A personal app for checking whether an item is worth buying to resell, keeping t
 
 ### 1. Check an item (🔍 Check tab)
 - **Scan**: point the camera at a barcode or QR code. The name, brand, model, size and colour fill in if the product is known.
-- **Photo**: take a picture of the item. It is saved with the item.
+- **Photo**: take a photo, or pick several from your photo library (up to 10 per item). The first one is the **cover** shown in the stock list. Tap a thumbnail to see it big, **Make cover** or **Delete photo**.
 - **Type**: type the name, e.g. `Nike Air Max 90 white UK 9`, then tap **Done**. Brand, model, size, colour and condition fill themselves in. It only fills empty boxes, so it never overwrites what you typed.
 
 ### 2. Check prices
@@ -47,6 +47,7 @@ Tap **＋ Add to stock**. It is saved as *Bought* with today's date.
   - Tap **Listed** or **Sold**. Today's date is filled in automatically.
   - Enter listed price, sold price and fees paid. Leave *fees paid* empty to use the estimate.
   - **Draft listing**: add measurements and flaws, then use the **Copy** buttons and paste into Vinted.
+  - **＋ Add photos** adds more photos to an item already in stock.
   - **Delete item** needs two taps.
 
 ### Settings (⚙️)

@@ -121,7 +121,7 @@ function stockRow(it) {
   info.appendChild(sub);
   row.appendChild(info);
 
-  const pr = el('div', 'pr ' + (r.profit < 0 ? 'neg' : 'pos'), r.hasSell ? gbp(r.profit) : '—');
+  const pr = el('div', 'pr ' + (!r.hasSell ? '' : r.profit < 0 ? 'neg' : 'pos'), r.hasSell ? gbp(r.profit) : '—');
   if (!r.sold) pr.style.opacity = 0.6; // not sold yet = estimate
   row.appendChild(pr);
 
@@ -142,8 +142,7 @@ async function openItem(id) {
   current = await DB.get('items', id);
   if (!current) return;
   $$('#tab-item [data-k]').forEach(inp => inp.value = current[inp.dataset.k] ?? '');
-  $('#i-photo').hidden = !current.photo;
-  $('#i-photo').src = current.photo || '';
+  renderItemGallery();
   resetDelete();
   refreshItem();
   showTab('item');
@@ -151,13 +150,30 @@ async function openItem(id) {
   if (typeof renderDraftListing === 'function') renderDraftListing(current); // step 7
 }
 
+// Photos on the item page
+function renderItemGallery() {
+  renderGallery($('#i-gallery'), current, async () => {
+    await DB.put('items', current);
+    renderItemGallery();
+  });
+}
+$('#btn-i-add-photos').addEventListener('click', () => $('#i-photo-input').click());
+$('#i-photo-input').addEventListener('change', async e => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  if (!files.length || !current) return;
+  await addPhotoFiles(files, current);
+  await DB.put('items', current);
+  renderItemGallery();
+});
+
 function refreshItem() {
   $('#i-title').textContent = current.name || 'Untitled';
   $$('#i-status button').forEach(b => b.classList.toggle('on', b.dataset.s === current.status));
   const r = itemProfit(current);
   $('#i-profit-label').textContent = r.sold ? 'Profit' : 'Expected profit';
   $('#i-profit').textContent = r.hasSell ? gbp(r.profit) : '—';
-  $('#i-profit').className = r.profit < 0 ? 'neg' : 'pos';
+  $('#i-profit').className = !r.hasSell ? '' : r.profit < 0 ? 'neg' : 'pos';
   $('#i-roi').textContent = r.hasSell && r.roi != null ? Math.round(r.roi) + '%' : '—';
   $('#i-fees').placeholder = r.hasSell ? r.fees.toFixed(2) + ' (est.)' : '';
 }
