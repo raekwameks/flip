@@ -86,6 +86,7 @@ async function renderStock() {
   $('#t-profit').textContent = gbp(profit);
   $('#t-profit').className = profit < 0 ? 'neg' : profit > 0 ? 'pos' : '';
   $('#t-count').textContent = inStock;
+  renderChart(items);
 
   // Filter + search
   const q = $('#stock-search').value.trim().toLowerCase();
@@ -102,6 +103,118 @@ async function renderStock() {
   }
   for (const it of shown) list.appendChild(stockRow(it));
 }
+
+// =====================================================================
+// MONTHLY PROFIT CHART — profit from items sold in each of the last 12 months
+// =====================================================================
+let chartPick = null; // which month is selected (YYYY-MM)
+
+function monthlyProfit(items) {
+  const now = new Date();
+  const months = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    months.push({ key, date: d, profit: 0, sales: 0 });
+  }
+  const byKey = Object.fromEntries(months.map(m => [m.key, m]));
+  for (const it of items) {
+    const r = itemProfit(it);
+    if (!r.sold) continue;
+    const when = it.soldDate || it.listedDate || new Date(it.created).toISOString();
+    const m = byKey[when.slice(0, 7)];
+    if (m) { m.profit += r.profit; m.sales++; }
+  }
+  return months;
+}
+
+// Rounds the top of the scale up to a tidy number (10, 20, 50, 100…)
+function niceCeil(v) {
+  if (v <= 0) return 0;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  return [1, 2, 2.5, 5, 10].map(n => n * p).find(n => n >= v);
+}
+
+function renderChart(items) {
+  const months = monthlyProfit(items);
+  if (!chartPick || !months.some(m => m.key === chartPick)) chartPick = months[11].key;
+
+  const box = $('#chart');
+  const W = box.clientWidth || 340, H = 170;
+  const padL = 44, padR = 4, padT = 10, padB = 22;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  const vals = months.map(m => m.profit);
+  let max = niceCeil(Math.max(0, ...vals)), min = -niceCeil(-Math.min(0, ...vals));
+  if (max === 0 && min === 0) max = 10;
+  const y = v => padT + (max - v) / (max - min) * plotH;
+  const slot = plotW / 12;
+  const bw = Math.min(slot * 0.62, 22), r = Math.min(4, bw / 2);
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('height', H);
+  const add = (tag, attrs, text) => {
+    const e = document.createElementNS(ns, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    svg.appendChild(e); return e;
+  };
+  const short = v => (v < 0 ? '-£' : '£') + Math.abs(v).toLocaleString('en-GB', { maximumFractionDigits: 0 });
+
+  // grid lines: top, bottom (if a loss month), and the zero line
+  const ticks = [max, ...(min < 0 ? [min] : []), ...(max > 0 && min === 0 ? [max / 2] : [])];
+  for (const t of ticks) {
+    add('line', { class: 'grid', x1: padL, x2: W - padR, y1: y(t), y2: y(t) });
+    add('text', { class: 'ylab', x: padL - 6, y: y(t) + 3, 'text-anchor': 'end' }, short(t));
+  }
+
+  months.forEach((m, i) => {
+    const cx = padL + slot * i + slot / 2;
+    const on = m.key === chartPick;
+    // selected column highlight (also the big tap target)
+    const hit = add('rect', { class: 'col-bg' + (on ? ' on' : ''), x: padL + slot * i, y: padT, width: slot, height: plotH, rx: 6 });
+    if (m.profit !== 0) {
+      const top = y(Math.max(m.profit, 0)), bottom = y(Math.min(m.profit, 0));
+      const h = Math.max(bottom - top, 2);
+      const cls = 'bar ' + (m.profit > 0 ? 'pos' : 'neg');
+      // rounded end away from zero, square end on the zero line
+      add('rect', { class: cls, x: cx - bw / 2, y: top, width: bw, height: h, rx: r });
+      const sq = Math.min(r, h / 2);
+      add('rect', { class: cls, x: cx - bw / 2, y: m.profit > 0 ? bottom - sq : top, width: bw, height: sq });
+    }
+    const label = slot < 26 ? m.date.toLocaleDateString('en-GB', { month: 'narrow' }) : m.date.toLocaleDateString('en-GB', { month: 'short' });
+    add('text', { class: 'xlab' + (on ? ' on' : ''), x: cx, y: H - 6, 'text-anchor': 'middle' }, label);
+    // invisible full-height tap area on top of everything in this column
+    const tap = add('rect', { x: padL + slot * i, y: 0, width: slot, height: H, fill: 'transparent' });
+    tap.style.cursor = 'pointer';
+    tap.addEventListener('click', () => { chartPick = m.key; renderChart(items); });
+  });
+  add('line', { class: 'zero', x1: padL, x2: W - padR, y1: y(0), y2: y(0) });
+
+  box.innerHTML = '';
+  box.appendChild(svg);
+
+  // readout for the selected month
+  const pick = months.find(m => m.key === chartPick);
+  const name = pick.date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  $('#chart-readout').textContent = pick.sales
+    ? `${name}: ${gbp(pick.profit)} profit from ${pick.sales} sale${pick.sales === 1 ? '' : 's'}`
+    : `${name}: no sales`;
+
+  // table view (newest month first)
+  const tb = $('#chart-tbody');
+  tb.innerHTML = '';
+  for (const m of months.slice().reverse()) {
+    const tr = document.createElement('tr');
+    for (const v of [m.date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }), m.sales, gbp(m.profit)]) {
+      const td = document.createElement('td'); td.textContent = v; tr.appendChild(td);
+    }
+    tb.appendChild(tr);
+  }
+}
+let chartResize;
+window.addEventListener('resize', () => { clearTimeout(chartResize); chartResize = setTimeout(renderStock, 200); });
 
 // One row in the list (built safely, without inserting raw text as HTML)
 function stockRow(it) {

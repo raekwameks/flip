@@ -119,6 +119,20 @@
         <div><span>Profit (sold)</span><b id="t-profit">£0</b></div>
         <div><span>Items in stock</span><b id="t-count">0</b></div>
       </div>
+      <!-- Monthly profit chart (sold items, last 12 months) -->
+      <div class="card chart-card">
+        <div class="chart-head">
+          <h2>Monthly profit</h2>
+          <span class="chart-key"><i class="sw pos"></i>Profit <i class="sw neg"></i>Loss</span>
+        </div>
+        <p class="muted small chart-sub">Sold items, last 12 months. Tap a bar.</p>
+        <div id="chart" role="img" aria-label="Bar chart of profit per month"></div>
+        <p class="chart-readout" id="chart-readout"></p>
+        <details class="chart-table">
+          <summary>Show as a table</summary>
+          <table><thead><tr><th>Month</th><th>Sales</th><th>Profit</th></tr></thead><tbody id="chart-tbody"></tbody></table>
+        </details>
+      </div>
       <input id="stock-search" type="search" placeholder="Search name, brand, size…" autocomplete="off">
       <div class="chips" id="stock-filter">
         <button data-f="all" class="active">All</button>
