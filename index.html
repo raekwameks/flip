@@ -19,7 +19,44 @@
     <!-- ===== CHECK TAB: find an item, check prices, work out profit ===== -->
     <section id="tab-check" class="tab active">
       <h1>Check an item</h1>
-      <p class="muted">Coming in step 2.</p>
+
+      <!-- 1. Find the item: three ways -->
+      <div class="three">
+        <button class="btn" id="btn-scan"><span>📷</span>Scan</button>
+        <button class="btn" id="btn-photo"><span>🖼</span>Photo</button>
+        <button class="btn" id="btn-type"><span>⌨️</span>Type</button>
+      </div>
+      <p class="muted small" id="scan-note" hidden>Barcode scanning arrives in step 3.</p>
+
+      <!-- Hidden file picker that opens the camera -->
+      <input type="file" id="photo-input" accept="image/*" capture="environment" hidden>
+      <div id="photo-box" hidden>
+        <img id="photo-preview" alt="Item photo">
+        <button class="btn" id="btn-photo-remove">Remove photo</button>
+      </div>
+
+      <!-- Item details -->
+      <div class="card">
+        <label for="f-name">Item name</label>
+        <input id="f-name" placeholder="e.g. Nike Air Max 90" autocomplete="off">
+        <div class="two">
+          <div><label for="f-brand">Brand</label><input id="f-brand" autocomplete="off"></div>
+          <div><label for="f-model">Model</label><input id="f-model" autocomplete="off"></div>
+          <div><label for="f-size">Size</label><input id="f-size" autocomplete="off"></div>
+          <div><label for="f-colour">Colour</label><input id="f-colour" autocomplete="off"></div>
+        </div>
+        <label for="f-condition">Condition</label>
+        <select id="f-condition">
+          <option value="">—</option>
+          <option>New with tags</option>
+          <option>New without tags</option>
+          <option>Very good</option>
+          <option>Good</option>
+          <option>Satisfactory</option>
+        </select>
+      </div>
+
+      <button class="btn" id="btn-clear">Start a new item</button>
     </section>
 
     <!-- ===== STOCK TAB: everything you've bought ===== -->
@@ -33,6 +70,7 @@
       <h1>Settings</h1>
       <p class="muted">Coming in step 5.</p>
       <p class="muted small">App version: <span id="app-version"></span></p>
+      <p class="small">Offline ready: <span id="offline-status">checking…</span></p>
     </section>
   </main>
 
