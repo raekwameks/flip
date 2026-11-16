@@ -1,5 +1,5 @@
 // ===== Main app code =====
-const APP_VERSION = '15'; // keep in step with VERSION in sw.js
+const APP_VERSION = '16'; // keep in step with VERSION in sw.js
 
 // Shortcut for finding things on the page
 const $ = (sel) => document.querySelector(sel);
