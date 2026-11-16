@@ -1,5 +1,5 @@
 // ===== Main app code =====
-const APP_VERSION = '6'; // keep in step with VERSION in sw.js
+const APP_VERSION = '7'; // keep in step with VERSION in sw.js
 
 // Shortcut for finding things on the page
 const $ = (sel) => document.querySelector(sel);
@@ -20,7 +20,8 @@ $('#app-version').textContent = APP_VERSION;
 // CHECK TAB — the item you're currently looking at ("draft")
 // The draft is saved on the phone as you type, so it survives closing the app.
 // =====================================================================
-const FIELDS = ['name', 'brand', 'model', 'size', 'colour', 'condition', 'barcode',
+// (the scanned barcode is kept in draft.barcode but not shown on screen)
+const FIELDS = ['name', 'brand', 'model', 'size', 'colour', 'condition',
                 'query', 'soldLow', 'soldTypical', 'soldHigh', 'vintedAsk'];
 let draft = { photo: null };
 
@@ -49,11 +50,6 @@ $('#f-condition').addEventListener('change', saveDraft);
 // When you finish typing the name, guess brand/size/colour/etc. into the empty boxes
 $('#f-name').addEventListener('change', autoFillFromName);
 
-// Typing a barcode number in by hand looks it up too
-$('#f-barcode').addEventListener('change', () => {
-  const code = $('#f-barcode').value.replace(/\D/g, '');
-  if (code.length >= 8 && code.length <= 14) lookupBarcode(code);
-});
 
 $('#btn-type').addEventListener('click', () => $('#f-name').focus());
 
@@ -399,7 +395,13 @@ async function checkOffline() {
   if (!ok) setTimeout(checkOffline, 2000);
 }
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then(checkOffline);
+  navigator.serviceWorker.register('sw.js').then(reg => { checkOffline(); reg.update(); });
+  // When a new version has downloaded, reload once so you see it straight away
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController && !reloaded) { reloaded = true; location.reload(); }
+  });
 } else {
   $('#offline-status').textContent = '❌ not supported';
 }
