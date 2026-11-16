@@ -1,10 +1,10 @@
 // ===== Offline cache =====
 // Saves the app's files on the phone so it opens with no signal.
 // WHEN YOU CHANGE ANY FILE: bump VERSION (and APP_VERSION in app.js) so phones pick up the update.
-const VERSION = '10';
+const VERSION = '11';
 const CACHE = 'flip-v' + VERSION;
 const FILES = [
-  './', 'index.html', 'style.css', 'db.js', 'app.js', 'stock.js', 'listing.js', 'manifest.json',
+  './', 'index.html', 'style.css', 'db.js', 'app.js', 'stock.js', 'listing.js', 'backup.js', 'manifest.json',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
   'lib/html5-qrcode.min.js',
 ];

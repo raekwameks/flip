@@ -115,6 +115,7 @@
     <!-- ===== STOCK TAB: everything you've bought ===== -->
     <section id="tab-stock" class="tab">
       <h1>Stock</h1>
+      <button class="status backup-nag" id="backup-nag" hidden>⚠️ No backup for a while. Tap to back up now.</button>
       <div class="totals">
         <div><span>Money spent</span><b id="t-spent">£0</b></div>
         <div><span>Money made</span><b id="t-made">£0</b></div>
@@ -223,6 +224,17 @@
     <section id="tab-settings" class="tab">
       <h1>Settings</h1>
       <div class="card">
+        <h2>Backup</h2>
+        <p class="muted small">Your stock only lives on this phone. Back up every week or so, then tap <b>Save to Files</b> (or AirDrop / email it to yourself).</p>
+        <p class="small" id="backup-last"></p>
+        <button class="btn primary" id="btn-backup-full">Full backup (with photos)</button>
+        <button class="btn" id="btn-backup-csv">Export CSV (spreadsheet, no photos)</button>
+        <button class="btn" id="btn-restore">Restore from a backup file</button>
+        <input type="file" id="restore-input" accept=".json,.csv,application/json,text/csv" hidden>
+        <p class="muted small">Restoring adds items from the file and updates ones that already exist. It never deletes anything.</p>
+      </div>
+
+      <div class="card">
         <h2>Buying rules</h2>
         <label for="s-minProfit">Minimum profit to BUY (£)</label>
         <input id="s-minProfit" inputmode="decimal" placeholder="5.00">
@@ -274,5 +286,6 @@
   <script src="app.js"></script>
   <script src="stock.js"></script>
   <script src="listing.js"></script>
+  <script src="backup.js"></script>
 </body>
 </html>

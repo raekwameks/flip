@@ -44,7 +44,8 @@ h2 { font-size: 19px; margin: 20px 0 8px; }
 .btn {
   display: block; width: 100%; min-height: 54px; border: 0; border-radius: var(--radius);
   background: var(--card); color: var(--text); font-size: 18px; font-weight: 600; margin: 10px 0;
-  text-align: center; text-decoration: none; line-height: 54px; padding: 0 12px;
+  text-align: center; text-decoration: none; line-height: 1.2; padding: 8px 12px;
+  display: flex; align-items: center; justify-content: center;
 }
 .btn.primary { background: var(--green); color: #06210f; }
 .btn.danger { background: var(--red); color: #2a0606; }
@@ -137,5 +138,8 @@ input[type="date"] { min-height: 46px; padding: 8px; font-size: 15px; }
 
 /* Draft listing */
 textarea.short { min-height: 0; }
-.btn.copy { min-height: 46px; line-height: 46px; font-size: 16px; margin-top: 6px; }
+.btn.copy { min-height: 46px; font-size: 16px; margin-top: 6px; }
 .btn.copied { background: var(--green); color: #06210f; }
+
+.backup-nag { display: block; width: 100%; text-align: left; color: var(--text); border: 0; border-left: 4px solid #e6b450; font: inherit; font-size: 15px; }
+.backup-nag[hidden] { display: none; }
