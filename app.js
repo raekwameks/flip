@@ -1,5 +1,5 @@
 // ===== Main app code =====
-const APP_VERSION = '4'; // keep in step with VERSION in sw.js
+const APP_VERSION = '5'; // keep in step with VERSION in sw.js
 
 // Shortcut for finding things on the page
 const $ = (sel) => document.querySelector(sel);
@@ -43,6 +43,15 @@ async function loadDraft() {
 
 FIELDS.forEach(f => $('#f-' + f).addEventListener('input', saveDraft));
 $('#f-condition').addEventListener('change', saveDraft);
+
+// When you finish typing the name, guess brand/size/colour/etc. into the empty boxes
+$('#f-name').addEventListener('change', autoFillFromName);
+
+// Typing a barcode number in by hand looks it up too
+$('#f-barcode').addEventListener('change', () => {
+  const code = $('#f-barcode').value.replace(/\D/g, '');
+  if (code.length >= 8 && code.length <= 14) lookupBarcode(code);
+});
 
 $('#btn-type').addEventListener('click', () => $('#f-name').focus());
 
@@ -165,7 +174,7 @@ async function lookupBarcode(code) {
     }
     if (found.name) draft.name = found.name; // a scan always replaces the name
     fillForm();
-    await saveDraft();
+    await autoFillFromName(); // fill any boxes the lookup didn't
     showStatus(`Found: ${found.name} (from ${found.source}). Edit it if it's not quite right.`);
   } else {
     showStatus(`Nothing found for ${code}. Type the name yourself.`);
@@ -203,6 +212,112 @@ async function lookupOpenFacts(code, kind) {
     const name = [brand, p.product_name, p.quantity].filter(Boolean).join(' ');
     return { name, brand, source: kind === 'food' ? 'Open Food Facts' : 'Open Beauty Facts' };
   } catch (e) { return null; }
+}
+
+
+// =====================================================================
+// AUTO-FILL FROM THE NAME (works offline, no AI)
+// Reads the item name and guesses brand, size, colour, condition and model.
+// Only fills boxes that are empty. Add brands/colours to the lists below any time.
+// =====================================================================
+const BRANDS = [
+  // Clothing & shoes
+  'Nike', 'Adidas', 'Puma', 'Reebok', 'New Balance', 'Asics', 'Vans', 'Converse', 'Dr. Martens|Dr Martens|Doc Martens',
+  'Timberland', 'UGG', 'Birkenstock', 'Salomon', 'Hoka', 'On Running', 'Crocs', 'Clarks', 'Skechers',
+  'The North Face|North Face|TNF', 'Patagonia', 'Arc\'teryx|Arcteryx', 'Columbia', 'Berghaus', 'Barbour', 'Canada Goose', 'Moncler',
+  'Stone Island', 'C.P. Company|CP Company', 'Carhartt', 'Dickies', 'Stüssy|Stussy', 'Supreme', 'Palace', 'Corteiz', 'Trapstar',
+  'Ralph Lauren|Polo Ralph Lauren', 'Tommy Hilfiger', 'Calvin Klein', 'Lacoste', 'Fred Perry', 'Hugo Boss|Boss', 'Armani|Emporio Armani',
+  'Levi\'s|Levis|Levi', 'Wrangler', 'Lee', 'Diesel', 'G-Star|G Star', 'Superdry', 'Hollister', 'Abercrombie & Fitch|Abercrombie',
+  'Zara', 'H&M', 'Uniqlo', 'Mango', 'COS', 'Arket', '& Other Stories|Other Stories', 'Massimo Dutti', 'Bershka', 'Pull&Bear|Pull and Bear',
+  'ASOS', 'Topshop', 'River Island', 'Next', 'Primark', 'M&S|Marks & Spencer|Marks and Spencer', 'Reiss', 'AllSaints|All Saints', 'Ted Baker',
+  'Whistles', 'Jigsaw', 'Hobbs', 'Boden', 'White Stuff', 'Fat Face|FatFace', 'Joules', 'Jack Wills', 'Urban Outfitters', 'Free People',
+  'Gymshark', 'Lululemon', 'Sweaty Betty', 'Under Armour', 'Champion', 'Fila', 'Kappa', 'Ellesse', 'Umbro', 'Le Coq Sportif',
+  'Burberry', 'Gucci', 'Prada', 'Louis Vuitton|LV', 'Chanel', 'Dior', 'Balenciaga', 'Versace', 'Off-White|Off White', 'Moschino', 'Vivienne Westwood',
+  'Michael Kors', 'Coach', 'Kate Spade', 'Mulberry', 'Radley', 'Fossil', 'Ray-Ban|Ray Ban', 'Oakley', 'Casio', 'Seiko',
+  // Tech, toys, games
+  'Apple', 'Samsung', 'Sony', 'PlayStation', 'Xbox', 'Nintendo', 'Microsoft', 'Bose', 'Beats', 'JBL', 'Dyson', 'GoPro', 'Canon', 'Nikon',
+  'Fujifilm', 'Google', 'Garmin', 'Fitbit', 'Lego', 'Pokémon|Pokemon', 'Barbie', 'Hot Wheels',
+];
+const COLOURS = ['Black', 'White', 'Grey|Gray', 'Navy', 'Blue', 'Red', 'Green', 'Khaki', 'Olive', 'Cream', 'Beige', 'Brown', 'Tan',
+  'Pink', 'Purple', 'Lilac', 'Yellow', 'Orange', 'Gold', 'Silver', 'Burgundy', 'Maroon', 'Teal', 'Multicolour|Multicolor|Multi'];
+
+const escapeRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Finds the first word/phrase from a list in the text. Returns { value, matched } or null.
+function findInList(text, list) {
+  let best = null;
+  for (const entry of list) {
+    const [display, ...aliases] = entry.split('|');
+    for (const word of [display, ...aliases]) {
+      const m = text.match(new RegExp('(^|[^\\p{L}])(' + escapeRe(word) + ')(?=$|[^\\p{L}])', 'iu'));
+      if (m && (!best || m.index < best.index || (m.index === best.index && word.length > best.matched.length))) {
+        best = { value: display, matched: m[2], index: m.index };
+      }
+    }
+  }
+  return best;
+}
+
+function guessFromName(name) {
+  const g = {};
+  let rest = name;
+  const take = (matched) => { rest = rest.replace(matched, ' '); };
+
+  const brand = findInList(name, BRANDS);
+  if (brand) { g.brand = brand.value; take(brand.matched); }
+
+  // Sizes — tried in this order
+  const sizeRules = [
+    [/\bW\s?(\d{2})\s?L\s?(\d{2})\b/i, m => `W${m[1]} L${m[2]}`],                 // jeans: W32 L30
+    [/\b(UK|EU|US)\s?(\d{1,2}(?:\.5)?)\b/i, m => `${m[1].toUpperCase()} ${m[2]}`], // shoes: UK 9
+    [/\b(\d{1,2}-\d{1,2})\s?(?:y|yrs?|years)\b/i, m => `${m[1]} years`],          // kids: 7-8 years
+    [/\bsize\s+(\d{1,2}(?:\.5)?|[a-z]{1,4})\b/i, m => m[1].toUpperCase()],         // size 10, size M
+    [/\b(XXS|XS|S|M|L|XL|XXL|XXXL|[2-5]XL)\b/, m => m[1]],                         // capital letters only
+    [/\b(x-?small|small|medium|large|x-?large)\b/i,
+      m => ({ xsmall: 'XS', 'x-small': 'XS', small: 'S', medium: 'M', large: 'L', xlarge: 'XL', 'x-large': 'XL' })[m[1].toLowerCase()]],
+  ];
+  for (const [re, fmt] of sizeRules) {
+    const m = rest.match(re);
+    if (m) { g.size = fmt(m); take(m[0]); rest = rest.replace(/\bsize\b/i, ' '); break; }
+  }
+
+  // Up to two colours, e.g. "Black / White"
+  const colours = [];
+  for (let i = 0; i < 2; i++) {
+    const c = findInList(rest, COLOURS);
+    if (!c) break;
+    colours.push(c.value); take(c.matched);
+  }
+  if (colours.length) g.colour = colours.join(' / ');
+
+  // Seller shorthand for condition
+  const condRules = [
+    [/\b(bnwot|new without tags?)\b/i, 'New without tags'],
+    [/\b(bnwt|new with tags?)\b/i, 'New with tags'],
+    [/\b(vgc|very good condition)\b/i, 'Very good'],
+  ];
+  for (const [re, val] of condRules) {
+    const m = rest.match(re);
+    if (m) { g.condition = val; take(m[0]); break; }
+  }
+
+  // Model = what's left, but only if we found a brand (otherwise it's just the name again)
+  if (brand) {
+    const model = rest.replace(/[\s,\/\-|]+/g, ' ').trim();
+    if (model) g.model = model;
+  }
+  return g;
+}
+
+async function autoFillFromName() {
+  readForm();
+  if (!draft.name) return;
+  const g = guessFromName(draft.name);
+  for (const k of ['brand', 'model', 'size', 'colour', 'condition']) {
+    if (g[k] && !draft[k]) draft[k] = g[k];
+  }
+  fillForm();
+  await saveDraft();
 }
 
 
