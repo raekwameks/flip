@@ -1,5 +1,5 @@
 // ===== Main app code =====
-const APP_VERSION = '3'; // keep in step with VERSION in sw.js
+const APP_VERSION = '4'; // keep in step with VERSION in sw.js
 
 // Shortcut for finding things on the page
 const $ = (sel) => document.querySelector(sel);
@@ -178,7 +178,12 @@ async function lookupUpcItemDb(code) {
   const relay = await getSetting('relayUrl', '');
   if (!relay) return null;
   try {
-    const res = await fetch(relay.replace(/\/$/, '') + '/?upc=' + encodeURIComponent(code));
+    const url = relay.replace(/\/$/, '') + '/?upc=' + encodeURIComponent(code);
+    let res = await fetch(url);
+    if (res.status === 429) { // "too busy" — wait a second and try once more
+      await new Promise(r => setTimeout(r, 1200));
+      res = await fetch(url);
+    }
     if (!res.ok) return null;
     const item = (await res.json()).items?.[0];
     if (!item?.title) return null;
