@@ -1,5 +1,5 @@
 // ===== Main app code =====
-const APP_VERSION = '7'; // keep in step with VERSION in sw.js
+const APP_VERSION = '8'; // keep in step with VERSION in sw.js
 
 // Shortcut for finding things on the page
 const $ = (sel) => document.querySelector(sel);
@@ -22,7 +22,8 @@ $('#app-version').textContent = APP_VERSION;
 // =====================================================================
 // (the scanned barcode is kept in draft.barcode but not shown on screen)
 const FIELDS = ['name', 'brand', 'model', 'size', 'colour', 'condition',
-                'query', 'soldLow', 'soldTypical', 'soldHigh', 'vintedAsk'];
+                'query', 'soldLow', 'soldTypical', 'soldHigh', 'vintedAsk',
+                'buyPrice', 'sellPrice', 'fees', 'postage', 'otherCosts'];
 let draft = { photo: null };
 
 function readForm() {
@@ -33,6 +34,7 @@ function fillForm() {
   $('#photo-box').hidden = !draft.photo;
   $('#photo-preview').src = draft.photo || '';
   updatePriceLinks();
+  calcProfit();
 }
 async function saveDraft() {
   readForm();
@@ -44,7 +46,7 @@ async function loadDraft() {
   fillForm();
 }
 
-FIELDS.forEach(f => $('#f-' + f).addEventListener('input', () => { saveDraft(); updatePriceLinks(); }));
+FIELDS.forEach(f => $('#f-' + f).addEventListener('input', () => { saveDraft(); updatePriceLinks(); calcProfit(); }));
 $('#f-condition').addEventListener('change', saveDraft);
 
 // When you finish typing the name, guess brand/size/colour/etc. into the empty boxes
@@ -132,6 +134,52 @@ $$('#btn-ebay, #btn-vinted').forEach(a => a.addEventListener('click', e => {
 function money(v) {
   const n = parseFloat(String(v ?? '').replace(/[£\s]/g, '').replace(',', '.'));
   return isNaN(n) ? null : n;
+}
+
+// =====================================================================
+// PROFIT CALCULATOR
+// Empty boxes use your defaults from Settings (shown in grey).
+// =====================================================================
+const gbp = n => (n < 0 ? '-£' : '£') + Math.abs(n).toFixed(2);
+
+// Works out profit for an item. Used here and (later) by the stock list.
+function profitFor(item, c = cfg) {
+  const buy = money(item.buyPrice) ?? 0;
+  const sell = money(item.sellPrice) ?? money(item.soldTypical) ?? 0;
+  const fees = money(item.fees) ?? (sell * c.feePercent / 100 + (sell > 0 ? c.feeFixed : 0));
+  const postage = money(item.postage) ?? c.postage;
+  const other = money(item.otherCosts) ?? c.otherCosts;
+  const cost = buy + postage + other;
+  const profit = sell - fees - cost;
+  const roi = cost > 0 ? (profit / cost) * 100 : null;
+  return { buy, sell, fees, postage, other, cost, profit, roi };
+}
+
+function calcProfit() {
+  readForm();
+  const r = profitFor(draft);
+
+  // show the defaults in grey so you know what's being used
+  $('#f-sellPrice').placeholder = money(draft.soldTypical) != null ? money(draft.soldTypical).toFixed(2) + ' (typical)' : '0.00';
+  $('#f-fees').placeholder = r.fees.toFixed(2);
+  $('#f-postage').placeholder = cfg.postage.toFixed(2);
+  $('#f-otherCosts').placeholder = cfg.otherCosts.toFixed(2);
+
+  $('#out-profit').textContent = gbp(r.profit);
+  $('#out-roi').textContent = r.roi == null ? '—' : Math.round(r.roi) + '%';
+
+  const box = $('#verdict');
+  box.classList.remove('buy', 'skip');
+  if (!r.sell || money(draft.buyPrice) == null) {
+    $('#verdict-word').textContent = '—';
+    $('#verdict-why').textContent = 'Enter a buy price and a sell price (or a typical eBay sold price).';
+    return;
+  }
+  const buy = r.profit >= cfg.minProfit;
+  box.classList.add(buy ? 'buy' : 'skip');
+  $('#verdict-word').textContent = buy ? 'BUY' : 'SKIP';
+  $('#verdict-why').textContent = `Your minimum profit is ${gbp(cfg.minProfit)}. ` +
+    `Sell ${gbp(r.sell)} − fees ${gbp(r.fees)} − buy ${gbp(r.buy)} − postage ${gbp(r.postage)} − other ${gbp(r.other)}.`;
 }
 
 // =====================================================================
@@ -381,8 +429,26 @@ async function setSetting(key, value) {
 }
 
 $('#s-relay').addEventListener('change', e => setSetting('relayUrl', e.target.value.trim()));
+
+// Money settings. Change the starting defaults here if you like.
+const CFG_DEFAULTS = { minProfit: 5, feePercent: 0, feeFixed: 0, postage: 0, otherCosts: 0 };
+let cfg = { ...CFG_DEFAULTS };
+
+Object.keys(CFG_DEFAULTS).forEach(k => {
+  $('#s-' + k).addEventListener('input', async e => {
+    cfg[k] = money(e.target.value) ?? CFG_DEFAULTS[k];
+    calcProfit();
+    await setSetting('cfg', cfg);
+  });
+});
+
 async function loadSettings() {
   $('#s-relay').value = await getSetting('relayUrl', '');
+  cfg = { ...CFG_DEFAULTS, ...(await getSetting('cfg', {})) };
+  Object.keys(CFG_DEFAULTS).forEach(k => {
+    $('#s-' + k).value = cfg[k] === CFG_DEFAULTS[k] ? '' : cfg[k];
+  });
+  calcProfit();
 }
 
 

@@ -87,3 +87,14 @@ textarea { min-height: 120px; }
 #photo-box { margin-top: 12px; }
 #photo-preview { width: 100%; max-height: 360px; object-fit: contain; border-radius: var(--radius); background: var(--card); display: block; }
 .btn.disabled { opacity: .4; }
+
+/* Big BUY / SKIP verdict */
+.verdict { margin-top: 14px; border-radius: var(--radius); padding: 14px; text-align: center; background: var(--bg); border: 2px solid var(--line); }
+.verdict-word { font-size: 48px; font-weight: 800; letter-spacing: 2px; }
+.verdict.buy { border-color: var(--green); }
+.verdict.buy .verdict-word { color: var(--green); }
+.verdict.skip { border-color: var(--red); }
+.verdict.skip .verdict-word { color: var(--red); }
+.verdict-nums { display: flex; justify-content: space-around; margin: 8px 0; }
+.verdict-nums div { display: flex; flex-direction: column; }
+.verdict-nums b { font-size: 24px; }

@@ -84,6 +84,29 @@
         <input id="f-vintedAsk" inputmode="decimal" placeholder="What similar items are listed for">
       </div>
 
+      <!-- 3. Profit calculator -->
+      <div class="card">
+        <h2>Profit</h2>
+        <div class="two">
+          <div><label for="f-buyPrice">Buy price (£)</label><input id="f-buyPrice" inputmode="decimal" placeholder="0.00"></div>
+          <div><label for="f-sellPrice">Expected sell (£)</label><input id="f-sellPrice" inputmode="decimal" placeholder="0.00"></div>
+          <div><label for="f-fees">Fees (£)</label><input id="f-fees" inputmode="decimal"></div>
+          <div><label for="f-postage">Postage I pay (£)</label><input id="f-postage" inputmode="decimal"></div>
+        </div>
+        <label for="f-otherCosts">Other costs (£): cleaning, bags, travel</label>
+        <input id="f-otherCosts" inputmode="decimal">
+        <p class="muted small">Grey numbers are your defaults from Settings. Type over them to change just this item.</p>
+
+        <div class="verdict" id="verdict">
+          <div class="verdict-word" id="verdict-word">—</div>
+          <div class="verdict-nums">
+            <div><span class="muted small">Profit</span><b id="out-profit">£0.00</b></div>
+            <div><span class="muted small">ROI</span><b id="out-roi">—</b></div>
+          </div>
+          <div class="muted small" id="verdict-why"></div>
+        </div>
+      </div>
+
       <button class="btn" id="btn-clear">Start a new item</button>
     </section>
 
@@ -96,7 +119,22 @@
     <!-- ===== SETTINGS TAB ===== -->
     <section id="tab-settings" class="tab">
       <h1>Settings</h1>
-      <p class="muted">Fees and profit settings arrive in step 5.</p>
+      <div class="card">
+        <h2>Buying rules</h2>
+        <label for="s-minProfit">Minimum profit to BUY (£)</label>
+        <input id="s-minProfit" inputmode="decimal" placeholder="5.00">
+      </div>
+
+      <div class="card">
+        <h2>Default fees &amp; costs</h2>
+        <p class="muted small">Used for every new item unless you type something different on the Check screen. Update these if Vinted or eBay change their fees.</p>
+        <div class="two">
+          <div><label for="s-feePercent">Selling fee (%)</label><input id="s-feePercent" inputmode="decimal" placeholder="0"></div>
+          <div><label for="s-feeFixed">Fixed fee per sale (£)</label><input id="s-feeFixed" inputmode="decimal" placeholder="0.00"></div>
+          <div><label for="s-postage">Postage I pay (£)</label><input id="s-postage" inputmode="decimal" placeholder="0.00"></div>
+          <div><label for="s-otherCosts">Other costs (£)</label><input id="s-otherCosts" inputmode="decimal" placeholder="0.00"></div>
+        </div>
+      </div>
 
       <div class="card">
         <h2>Barcode lookup relay</h2>
