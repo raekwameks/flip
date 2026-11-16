@@ -23,6 +23,7 @@ A personal app for checking whether an item is worth buying to resell, keeping t
 ### 1. Check an item (🔍 Check tab)
 - **Scan**: point the camera at a barcode or QR code. The name, brand, model, size and colour fill in if the product is known.
 - **Photo**: take a photo, or pick several from your photo library (up to 10 per item). The first one is the **cover** shown in the stock list. Tap a thumbnail to see it big, **Make cover** or **Delete photo**.
+- **🤖 AI identify** (optional, free): after you add photos, Google Gemini looks at them (item, labels, tags) and fills in the name, brand, model, size and colour. It only fills **empty** boxes. If you'd already typed a name, it offers a **Use AI name** button. Take a photo of the label or size tag as well for better results. Turn on in **Settings → AI photo identify** (see below).
 - **Type**: type the name, e.g. `Nike Air Max 90 white UK 9`, then tap **Done**. Brand, model, size, colour and condition fill themselves in. It only fills empty boxes, so it never overwrites what you typed.
 
 ### 2. Check prices
@@ -80,6 +81,19 @@ A yellow reminder appears on the Stock tab if you haven't made a full backup for
 
 ---
 
+## AI photo identify (setup, once)
+
+1. On your phone or computer, go to **aistudio.google.com/apikey** and sign in with a Google account.
+2. Tap **Create API key** and copy it.
+3. In Flip: **Settings → AI photo identify**, paste the key, tap **Test key**. It should say ✅.
+4. Leave **Identify automatically when I add a photo** ticked, or untick it and use the **🤖 Identify from photo** button instead.
+
+Good to know:
+- It's **free** on Google's free tier, which has a daily limit (not clearly published). If you hit it, Flip says so; try later.
+- Photos go to Google only when identifying. On the free tier Google may use them to improve its products.
+- The key is stored only on your phone and is **not** in backup files. On a new phone, paste it in again.
+- AI can be wrong. Always glance at the boxes, especially size.
+
 ## Barcode lookups
 
 After a scan, Flip tries these in order:
@@ -126,6 +140,7 @@ To check which version your phone has: **Settings → App version**.
 | `stock.js` | Stock list, totals, item page |
 | `listing.js` | Draft Vinted listing and template |
 | `backup.js` | Backup, CSV export and restore |
+| `ai.js` | AI photo identify (Google Gemini free tier) |
 | `db.js` | Saving data on the phone |
 | `sw.js` | Makes the app work offline |
 | `lib/html5-qrcode.min.js` | Barcode/QR scanner library |
@@ -133,9 +148,9 @@ To check which version your phone has: **Settings → App version**.
 
 **Adding brands or colours for auto-fill:** edit the `BRANDS` and `COLOURS` lists in `app.js`.
 
-**Spots left for AI later:**
-- `aiIdentify()` in `app.js`: identify an item from its photo.
-- `aiWriteListing()` in `listing.js`: write the listing text.
+**AI:**
+- `ai.js`: AI photo identify (Gemini). The instructions sent to the AI are in `AI_PROMPT`.
+- `aiWriteListing()` in `listing.js`: spot left for an AI listing writer later.
 
 ---
 

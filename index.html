@@ -38,6 +38,7 @@
       <!-- Hidden file picker that opens the camera -->
       <input type="file" id="photo-input" accept="image/*" multiple hidden>
       <div class="gallery" id="draft-gallery" hidden></div>
+      <button class="btn ai" id="btn-ai-identify" hidden>🤖 Identify from photo</button>
 
       <!-- Item details -->
       <div class="card">
@@ -277,6 +278,17 @@
       </div>
 
       <div class="card">
+        <h2>AI photo identify</h2>
+        <p class="muted small">Uses Google Gemini's free tier to read your photos (item, labels, tags) and fill in the name, brand, model, size and colour. Photos are sent to Google only when it identifies. On the free tier Google may use them to improve its products. The key stays on this phone and is not included in backups.</p>
+        <a class="btn" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a free key (Google AI Studio)</a>
+        <label for="s-aiKey">Gemini API key</label>
+        <input id="s-aiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste your key here">
+        <label class="check"><input type="checkbox" id="s-aiAuto"> Identify automatically when I add a photo</label>
+        <button class="btn" id="btn-ai-test">Test key</button>
+        <p class="small" id="ai-test-status"></p>
+      </div>
+
+      <div class="card">
         <h2>Barcode lookup relay</h2>
         <p class="muted small">Optional. Paste your Cloudflare Worker address here to look up electronics and branded goods (UPCitemdb). Leave empty to use only Open Food Facts.</p>
         <label for="s-relay">Relay address</label>
@@ -311,5 +323,6 @@
   <script src="stock.js"></script>
   <script src="listing.js"></script>
   <script src="backup.js"></script>
+  <script src="ai.js"></script>
 </body>
 </html>

@@ -186,3 +186,10 @@ textarea.short { min-height: 0; }
 .chart-table th, .chart-table td { text-align: right; padding: 6px 4px; border-bottom: 1px solid var(--line); }
 .chart-table th:first-child, .chart-table td:first-child { text-align: left; }
 .chart-table th { color: var(--muted); font-weight: 600; }
+
+/* AI identify */
+.btn.ai { background: #3b2a6b; color: #fff; }
+.btn.ai[hidden] { display: none; }
+label.check { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--text); margin: 14px 0 4px; }
+label.check input { width: 24px; height: 24px; flex: none; }
+.status .use-btn { display: block; margin-top: 8px; background: var(--blue); color: #04213f; border: 0; border-radius: 10px; padding: 10px 12px; font: inherit; font-weight: 600; width: 100%; }

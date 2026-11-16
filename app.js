@@ -1,5 +1,5 @@
 // ===== Main app code =====
-const APP_VERSION = '13'; // keep in step with VERSION in sw.js
+const APP_VERSION = '14'; // keep in step with VERSION in sw.js
 
 // Shortcut for finding things on the page
 const $ = (sel) => document.querySelector(sel);
@@ -127,6 +127,7 @@ $('#v-delete').addEventListener('click', async () => {
 // ----- Photos on the Check screen -----
 async function draftPhotosChanged() {
   renderGallery($('#draft-gallery'), draft, draftPhotosChanged);
+  if (typeof updateAiButton === 'function') updateAiButton();
   await saveDraft();
 }
 $('#btn-photo').addEventListener('click', () => $('#photo-input').click());
@@ -137,8 +138,8 @@ $('#photo-input').addEventListener('change', async (e) => {
   await addPhotoFiles(files, draft);
   await draftPhotosChanged();
 
-  // --- AI IDENTIFY: future feature goes here ---
-  // e.g. const guess = await aiIdentify(getPhotos(draft)[0]); if (guess) { draft.name = guess.name; fillForm(); }
+  // AI identify (ai.js) — runs if a key is set and "automatically" is ticked
+  if (typeof autoIdentify === 'function') autoIdentify();
 });
 
 // Makes photos smaller (max 1200px wide/high) so the phone doesn't fill up
@@ -159,10 +160,6 @@ function shrinkPhoto(file, max = 1200) {
   });
 }
 
-// Placeholder for a future "AI identify from photo" feature. Returns nothing for now.
-async function aiIdentify(photoDataUrl) {
-  return null;
-}
 
 
 // =====================================================================
