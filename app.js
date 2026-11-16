@@ -1,5 +1,5 @@
 // ===== Main app code =====
-const APP_VERSION = '2'; // keep in step with VERSION in sw.js
+const APP_VERSION = '3'; // keep in step with VERSION in sw.js
 
 // Shortcut for finding things on the page
 const $ = (sel) => document.querySelector(sel);
@@ -20,7 +20,7 @@ $('#app-version').textContent = APP_VERSION;
 // CHECK TAB — the item you're currently looking at ("draft")
 // The draft is saved on the phone as you type, so it survives closing the app.
 // =====================================================================
-const FIELDS = ['name', 'brand', 'model', 'size', 'colour', 'condition'];
+const FIELDS = ['name', 'brand', 'model', 'size', 'colour', 'condition', 'barcode'];
 let draft = { photo: null };
 
 function readForm() {
@@ -45,11 +45,11 @@ FIELDS.forEach(f => $('#f-' + f).addEventListener('input', saveDraft));
 $('#f-condition').addEventListener('change', saveDraft);
 
 $('#btn-type').addEventListener('click', () => $('#f-name').focus());
-$('#btn-scan').addEventListener('click', () => { $('#scan-note').hidden = false; });
 
 $('#btn-clear').addEventListener('click', async () => {
   draft = { photo: null };
   fillForm();
+  showStatus('');
   await saveDraft();
   window.scrollTo(0, 0);
 });
@@ -98,6 +98,127 @@ async function aiIdentify(photoDataUrl) {
 
 
 // =====================================================================
+// BARCODE SCANNING + LOOKUP
+// =====================================================================
+let scanner = null;
+
+function showStatus(msg) {
+  $('#scan-status').hidden = !msg;
+  $('#scan-status').textContent = msg;
+}
+
+$('#btn-scan').addEventListener('click', startScan);
+$('#btn-scan-cancel').addEventListener('click', stopScan);
+
+async function startScan() {
+  $('#scanner').hidden = false;
+  const F = Html5QrcodeSupportedFormats;
+  scanner = new Html5Qrcode('reader', {
+    verbose: false,
+    formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128, F.CODE_39],
+  });
+  try {
+    await scanner.start(
+      { facingMode: 'environment' },          // back camera
+      { fps: 10, qrbox: { width: 260, height: 140 } },
+      onScanned
+    );
+  } catch (err) {
+    await stopScan();
+    showStatus('Could not open the camera. Check Flip is allowed to use the camera, then try again.');
+  }
+}
+
+async function stopScan() {
+  if (scanner) {
+    try { await scanner.stop(); } catch (e) {}
+    try { scanner.clear(); } catch (e) {}
+    scanner = null;
+  }
+  $('#scanner').hidden = true;
+}
+
+async function onScanned(code) {
+  await stopScan();
+  if (navigator.vibrate) navigator.vibrate(80);
+  readForm();
+  draft.barcode = code;
+  fillForm();
+  await saveDraft();
+  await lookupBarcode(code);
+}
+
+// Tries each free lookup in turn. Fills in only the boxes that are still empty.
+async function lookupBarcode(code) {
+  if (!navigator.onLine) {
+    showStatus(`Barcode ${code} saved. No signal, so type the name yourself.`);
+    $('#f-name').focus();
+    return;
+  }
+  showStatus(`Looking up ${code}…`);
+  const found = (await lookupUpcItemDb(code)) || (await lookupOpenFacts(code, 'food')) || (await lookupOpenFacts(code, 'beauty'));
+
+  readForm();
+  if (found) {
+    for (const k of ['name', 'brand', 'model', 'colour', 'size']) {
+      if (found[k] && !draft[k]) draft[k] = found[k];
+    }
+    if (found.name) draft.name = found.name; // a scan always replaces the name
+    fillForm();
+    await saveDraft();
+    showStatus(`Found: ${found.name} (from ${found.source}). Edit it if it's not quite right.`);
+  } else {
+    showStatus(`Nothing found for ${code}. Type the name yourself.`);
+    $('#f-name').focus();
+  }
+}
+
+// UPCitemdb (electronics, branded goods). Only works through your own relay — see cloudflare-worker.js
+async function lookupUpcItemDb(code) {
+  const relay = await getSetting('relayUrl', '');
+  if (!relay) return null;
+  try {
+    const res = await fetch(relay.replace(/\/$/, '') + '/?upc=' + encodeURIComponent(code));
+    if (!res.ok) return null;
+    const item = (await res.json()).items?.[0];
+    if (!item?.title) return null;
+    return { name: item.title, brand: item.brand, model: item.model, colour: item.color, size: item.size, source: 'UPCitemdb' };
+  } catch (e) { return null; }
+}
+
+// Open Food Facts / Open Beauty Facts (food, toiletries, cosmetics). Free, no key.
+async function lookupOpenFacts(code, kind) {
+  const host = kind === 'food' ? 'world.openfoodfacts.org' : 'world.openbeautyfacts.org';
+  try {
+    const res = await fetch(`https://${host}/api/v2/product/${encodeURIComponent(code)}.json?fields=product_name,brands,quantity`);
+    if (!res.ok) return null;
+    const p = (await res.json()).product;
+    if (!p?.product_name) return null;
+    const brand = (p.brands || '').split(',')[0].trim();
+    const name = [brand, p.product_name, p.quantity].filter(Boolean).join(' ');
+    return { name, brand, source: kind === 'food' ? 'Open Food Facts' : 'Open Beauty Facts' };
+  } catch (e) { return null; }
+}
+
+
+// =====================================================================
+// SETTINGS
+// =====================================================================
+async function getSetting(key, fallback) {
+  const row = await DB.get('settings', key);
+  return row ? row.value : fallback;
+}
+async function setSetting(key, value) {
+  await DB.put('settings', { key, value });
+}
+
+$('#s-relay').addEventListener('change', e => setSetting('relayUrl', e.target.value.trim()));
+async function loadSettings() {
+  $('#s-relay').value = await getSetting('relayUrl', '');
+}
+
+
+// =====================================================================
 // OFFLINE SUPPORT
 // =====================================================================
 async function checkOffline() {
@@ -113,3 +234,4 @@ if ('serviceWorker' in navigator) {
 
 // ----- Start up -----
 loadDraft();
+loadSettings();

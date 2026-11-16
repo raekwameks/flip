@@ -26,7 +26,14 @@
         <button class="btn" id="btn-photo"><span>🖼</span>Photo</button>
         <button class="btn" id="btn-type"><span>⌨️</span>Type</button>
       </div>
-      <p class="muted small" id="scan-note" hidden>Barcode scanning arrives in step 3.</p>
+      <p class="status" id="scan-status" hidden></p>
+
+      <!-- Full-screen barcode scanner (hidden until you tap Scan) -->
+      <div id="scanner" hidden>
+        <p class="scan-hint">Point the camera at the barcode</p>
+        <div id="reader"></div>
+        <button class="btn danger" id="btn-scan-cancel">Cancel</button>
+      </div>
 
       <!-- Hidden file picker that opens the camera -->
       <input type="file" id="photo-input" accept="image/*" capture="environment" hidden>
@@ -54,6 +61,8 @@
           <option>Good</option>
           <option>Satisfactory</option>
         </select>
+        <label for="f-barcode">Barcode</label>
+        <input id="f-barcode" inputmode="numeric" autocomplete="off" placeholder="Filled in when you scan">
       </div>
 
       <button class="btn" id="btn-clear">Start a new item</button>
@@ -68,7 +77,14 @@
     <!-- ===== SETTINGS TAB ===== -->
     <section id="tab-settings" class="tab">
       <h1>Settings</h1>
-      <p class="muted">Coming in step 5.</p>
+      <p class="muted">Fees and profit settings arrive in step 5.</p>
+
+      <div class="card">
+        <h2>Barcode lookup relay</h2>
+        <p class="muted small">Optional. Paste your Cloudflare Worker address here to look up electronics and branded goods (UPCitemdb). Leave empty to use only Open Food Facts.</p>
+        <label for="s-relay">Relay address</label>
+        <input id="s-relay" type="url" placeholder="https://flip-barcode.yourname.workers.dev" autocomplete="off" autocapitalize="off">
+      </div>
       <p class="muted small">App version: <span id="app-version"></span></p>
       <p class="small">Offline ready: <span id="offline-status">checking…</span></p>
     </section>
@@ -81,6 +97,7 @@
     <button data-tab="settings"><span>⚙️</span>Settings</button>
   </nav>
 
+  <script src="lib/html5-qrcode.min.js"></script>
   <script src="db.js"></script>
   <script src="app.js"></script>
 </body>
